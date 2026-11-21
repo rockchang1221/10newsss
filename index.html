@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>10newsss Store</title>
+  <meta name="description" content="10newsss Store 精選好物連結頁，支援透過 Google 試算表 CSV 動態更新商品卡片與連結。" />
+  <meta property="og:title" content="10newsss Store" />
+  <meta property="og:description" content="10newsss Store 精選好物連結頁，每日精選好康優惠不漏接。" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- 字體載入：Outfit (英文標題) + Noto Sans TC (繁體中文) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Outfit:wght@700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ==========================================
+       色彩與設計系統變數（依據設計稿精準配色）
+       ========================================== */
+    :root {
+      --bg-page: #FFF8F4;
+      --bg-header: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --bg-mystery: #111111;
+      --bg-shopee: #EA5F01;
+      --bg-footer: #F4AB7A;
+
+      --accent-orange: #EA5F01;
+      --border-orange: #EA5F01;
+      --border-soft: #F09050;
+      --border-header: #FCE8DB;
+      --shadow-peach: #F4AB7A;
+
+      --text-primary: #111111;
+      --text-secondary: #333333;
+      --text-muted: #666666;
+      --text-inverse: #FFFFFF;
+
+      --shadow-offset: 4px;
+      --container-max: 440px;
+      --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      font-family: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    /* ==========================================
+       頂部品牌列
+       ========================================== */
+    .site-header {
+      width: 100%;
+      background-color: var(--bg-header);
+      border-bottom: 1px solid var(--border-header);
+      padding: 20px 16px;
+      text-align: center;
+    }
+
+    .site-title {
+      font-family: "Outfit", "Noto Sans TC", sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #000000;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+
+    /* ==========================================
+       主要內容容器（手機滿版留邊、電腦置中留白）
+       ========================================== */
+    .page-main {
+      flex: 1 0 auto;
+      width: 100%;
+      max-width: var(--container-max);
+      margin: 0 auto;
+      padding: 24px 28px 34px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 共用卡片互動與硬陰影 */
+    .card-link {
+      display: block;
+      width: 100%;
+      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-peach);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .card-link:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--shadow-peach);
+    }
+
+    .card-link:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 var(--shadow-peach);
+    }
+
+    .card-link:focus-visible {
+      outline: 2px solid var(--text-primary);
+      outline-offset: 3px;
+    }
+
+    /* ==========================================
+       0. 頂部社群連結列：YT / FB / IG / Threads（四個正方形按鈕）
+       ========================================== */
+    .social-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      width: 100%;
+    }
+
+    .social-card {
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg-card);
+      border: 1.5px solid var(--border-soft);
+      padding: 12px;
+    }
+
+    .social-card__icon {
+      width: 56%;
+      height: 56%;
+      min-width: 28px;
+      min-height: 28px;
+      max-width: 40px;
+      max-height: 40px;
+      display: block;
+    }
+
+    /* ==========================================
+       1. 頂部卡片：今日精選神秘好物（對應 CSV 第一筆）
+       ========================================== */
+    .mystery-card {
+      background-color: var(--bg-mystery);
+      border: 1.5px solid var(--border-orange);
+      color: var(--text-inverse);
+      padding: 13px 16px;
+      text-align: center;
+      font-size: clamp(16px, 4.8vw, 19px);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ==========================================
+       2. 固定卡片：加入社群 LINE（連結直接寫死在 HTML）
+       ========================================== */
+    .line-card {
+      display: flex;
+      align-items: stretch;
+      background-color: var(--bg-card);
+      border: 1.5px solid var(--border-soft);
+      min-height: 54px;
+    }
+
+    .line-card__icon-box {
+      flex: 0 0 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--border-soft);
+      padding: 8px;
+    }
+
+    .line-card__icon {
+      width: 34px;
+      height: 34px;
+      display: block;
+    }
+
+    .line-card__label {
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-size: clamp(16px, 4.8vw, 19px);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ==========================================
+       3. 中間浮動商品卡片列表（對應 CSV 中間各筆資料）
+       ========================================== */
+    .products-list {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .products-list:empty {
+      display: none;
+    }
+
+    .product-card {
+      background-color: var(--bg-card);
+      border-left: 1px solid var(--border-soft);
+      border-right: 1px solid var(--border-soft);
+      border-bottom: 1px solid var(--border-soft);
+      border-top: 4px solid var(--accent-orange);
+      padding: 11px 11px 17px;
+    }
+
+    .product-card__media {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border: 1px solid var(--border-soft);
+      background-color: #FFF2E8;
+      overflow: hidden;
+    }
+
+    .product-card__img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* 圖片載入失敗時的優雅備援畫面 */
+    .product-card__fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 24px;
+      text-align: center;
+      background: linear-gradient(135deg, #FFF5EC 0%, #FFE4D1 100%);
+      color: #A64B0C;
+    }
+
+    .product-card__fallback svg {
+      width: 44px;
+      height: 44px;
+      opacity: 0.7;
+    }
+
+    .product-card__fallback-text {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+      max-width: 80%;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* 圖片右下角「馬上去下單」白底橘框按鈕標籤（鎖死樣式，hover 時不變色、不單獨移動） */
+    .product-card__cta {
+      position: absolute;
+      right: 2.2%;
+      bottom: 2.2%;
+      min-width: 36%;
+      min-height: 11%;
+      padding: 6px 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #FFFFFF;
+      border: 1.5px solid var(--accent-orange);
+      color: var(--accent-orange);
+      font-size: clamp(13px, 3.8vw, 15px);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      line-height: 1;
+      white-space: nowrap;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .product-card__body {
+      width: 100%;
+      padding: 14px 4px 0;
+    }
+
+    .product-card__title {
+      width: 100%;
+      font-size: clamp(17px, 5vw, 20px);
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.35;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .product-card__desc {
+      width: 100%;
+      font-size: 13.5px;
+      font-weight: 400;
+      color: var(--text-secondary);
+      line-height: 1.58;
+      min-height: calc(1.58em * 2);
+      max-height: calc(1.58em * 2);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    /* 載入中骨架屏 */
+    .skeleton-card {
+      background-color: var(--bg-card);
+      border-left: 1px solid var(--border-soft);
+      border-right: 1px solid var(--border-soft);
+      border-bottom: 1px solid var(--border-soft);
+      border-top: 4px solid var(--accent-orange);
+      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-peach);
+      padding: 11px 11px 17px;
+    }
+
+    .skeleton-box {
+      background: linear-gradient(90deg, #FBE9DC 25%, #FFF4EC 50%, #FBE9DC 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite linear;
+    }
+
+    .skeleton-media {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+    }
+
+    .skeleton-title {
+      height: 22px;
+      width: 78%;
+      margin-top: 14px;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .skeleton-line--short {
+      width: 68%;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    /* ==========================================
+       4. 底部卡片：我要去蝦皮逛逛（對應 CSV 最後一筆）
+       ========================================== */
+    .shopee-card {
+      background-color: var(--bg-shopee);
+      border: 1.5px solid #111111;
+      color: var(--text-inverse);
+      padding: 18px 16px;
+      text-align: center;
+      font-size: clamp(18px, 5vw, 21px);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 錯誤提示（僅在 CSV 載入失敗且關閉備援時顯示） */
+    .status-notice {
+      background-color: #FFFFFF;
+      border: 1.5px solid var(--border-soft);
+      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--shadow-peach);
+      padding: 18px 16px;
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ==========================================
+       頁尾版權區
+       ========================================== */
+    .site-footer {
+      width: 100%;
+      background-color: var(--bg-footer);
+      color: var(--text-primary);
+      text-align: center;
+      padding: 24px 16px;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+
+    /* 小螢幕微調 */
+    @media (max-width: 380px) {
+      .page-main {
+        padding: 20px 20px 30px;
+      }
+    }
+
+    /* 尊重系統減少動態偏好 */
+    @media (prefers-reduced-motion: reduce) {
+      .card-link {
+        transition: none;
+      }
+      .skeleton-box {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 頂部標題列 -->
+  <header class="site-header">
+    <h1 class="site-title">10newsss Store</h1>
+  </header>
+
+  <!-- 主要內容區 -->
+  <main class="page-main">
+    <!-- 頭筆資料固定對應：今日精選神秘好物！點開就知道（由 CSV 第一筆動態更新） -->
+    <a
+      id="mystery-card"
+      class="card-link mystery-card"
+      href="#"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      今日精選神秘好物！點開就知道
+    </a>
+
+    <!-- 固定卡片：加入社群！好康不會錯過（請直接把下方 href 改成您的 LINE 社群連結） -->
+    <a
+      id="line-card"
+      class="card-link line-card"
+      href="https://line.me/ti/g2/YOUR_LINE_GROUP_ID"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="加入 LINE 社群！好康不會錯過"
+    >
+      <span class="line-card__icon-box" aria-hidden="true">
+        <svg class="line-card__icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="11" fill="#06C755" />
+          <path
+            d="M39.2 22.4c0-7.2-7.2-13-15.2-13s-15.2 5.8-15.2 13c0 6.4 5.7 11.8 13.4 12.8.5.1 1.2.3 1.4.8.2.4.1 1.1.1 1.5l-.2 1.3c-.1.4-.3 1.5 1.3.8 1.7-.7 8.9-5.3 12.2-9 2.2-2.4 2.2-5 2.2-8.2z"
+            fill="#FFFFFF"
+          />
+          <text
+            x="24"
+            y="25.8"
+            text-anchor="middle"
+            fill="#06C755"
+            font-family="Outfit, Arial, sans-serif"
+            font-size="9.5"
+            font-weight="800"
+            letter-spacing="0.2"
+          >LINE</text>
+        </svg>
+      </span>
+      <span class="line-card__label">加入社群！好康不會錯過</span>
+    </a>
+
+    <!-- 中間浮動商品卡片容器（由 CSV 第 2 筆至倒數第 2 筆動態生成） -->
+    <section id="products-list" class="products-list" aria-label="精選商品列表"></section>
+
+    <!-- 尾筆資料固定對應：我要去蝦皮逛逛（由 CSV 最後一筆動態更新） -->
+    <a
+      id="shopee-card"
+      class="card-link shopee-card"
+      href="#"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      我要去蝦皮逛逛
+    </a>
+  </main>
+
+  <!-- 頁尾版權 -->
+  <footer class="site-footer">
+    Copyright © 2026 10.newsss. All Rights Reserved.
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // =========================================================================
+      //  ★ 設定區：請在這裡貼上您發佈的 Google 試算表 .csv 連結
+      // =========================================================================
+      const CONFIG = {
+        // Google 試算表「發佈到網路」產生的 CSV 網址（欄位依序為 A:title、B:text、C:image、D:url）
+        // 亦支援透過網址參數覆蓋測試：?csv=您的CSV連結
+        csvUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRIuivoYQxdu0ws7xC3_5rx47NZhw_JJi1_Ye_JrRnSpJohFyBpnNJquXDtZj0yu4v37hvNkFbkSsfK/pub?gid=96414598&single=true&output=csv',
+
+        // 若 CSV 裡的 image 欄位沒有副檔名（例如 images/product1），會依序嘗試以下副檔名
+        defaultImageExts: ['.jpg', '.png', '.webp', '.jpeg'],
+
+        // 商品圖片右下角的行動呼籲按鈕文字
+        productCtaText: '馬上去下單',
+
+        // 當網路讀取失敗時，是否顯示內建範例資料當備援
+        useFallbackDemoData: true
+      };
+
+      // =========================================================================
+      //  內建範例資料（對應附圖一、附圖二，作為未填 CSV 連結時的預覽備援）
+      // =========================================================================
+      const DEMO_ROWS = [
+        {
+          title: '今日精選神秘好物！點開就知道',
+          text: '',
+          image: '',
+          url: 'https://shopee.tw/'
+        },
+        {
+          title: '【蛋殼北北】柔盈拋棄式加厚洗臉巾 60抽 100%MIT台灣製造',
+          text: '100%植物纖維，親膚柔軟舒適，珍珠紋，立體潔淨力大升級，強韌不掉絮，可平放可吊掛，洗臉卸妝一次搞定。',
+          image: 'images/product1',
+          url: 'https://shopee.tw/'
+        },
+        {
+          title: '【老協珍】人蔘精9入/15入 經典原味 榮獲國際A.A.無添加驗證',
+          text: '品名:【人蔘精 隨身袋 經典原味(15入)】內容物：水、西洋蔘、冰糖、白蔘、果醋 容量：每包65ml，嚴選整支白蔘與西洋蔘熬煮。',
+          image: 'images/product2',
+          url: 'https://shopee.tw/'
+        },
+        {
+          title: '我要去蝦皮逛逛',
+          text: '',
+          image: '',
+          url: 'https://shopee.tw/'
+        }
+      ];
+
+      // =========================================================================
+      //  DOM 參考
+      // =========================================================================
+      const mysteryCardEl = document.getElementById('mystery-card');
+      const productsListEl = document.getElementById('products-list');
+      const shopeeCardEl = document.getElementById('shopee-card');
+
+      // =========================================================================
+      //  RFC 4180 標準 CSV 解析器（支援引號、逗號、換行、UTF-8 BOM）
+      // =========================================================================
+      function parseCSV(csvText) {
+        const cleanText = csvText.replace(/^\uFEFF/, '');
+        const matrix = [];
+        let row = [];
+        let field = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < cleanText.length; i++) {
+          const ch = cleanText[i];
+          const next = cleanText[i + 1];
+
+          if (inQuotes) {
+            if (ch === '"' && next === '"') {
+              field += '"';
+              i++;
+            } else if (ch === '"') {
+              inQuotes = false;
+            } else {
+              field += ch;
+            }
+          } else {
+            if (ch === '"') {
+              inQuotes = true;
+            } else if (ch === ',') {
+              row.push(field.trim());
+              field = '';
+            } else if (ch === '\r' && next === '\n') {
+              row.push(field.trim());
+              matrix.push(row);
+              row = [];
+              field = '';
+              i++;
+            } else if (ch === '\n' || ch === '\r') {
+              row.push(field.trim());
+              matrix.push(row);
+              row = [];
+              field = '';
+            } else {
+              field += ch;
+            }
+          }
+        }
+
+        if (field.length > 0 || row.length > 0) {
+          row.push(field.trim());
+          matrix.push(row);
+        }
+
+        if (matrix.length < 2) return [];
+
+        // 讀取第一列欄位名稱（不分大小寫）
+        const headers = matrix[0].map((h) => h.trim().toLowerCase());
+        const findCol = (names, fallbackIndex) => {
+          for (const name of names) {
+            const idx = headers.indexOf(name);
+            if (idx !== -1) return idx;
+          }
+          return fallbackIndex;
+        };
+
+        const titleIdx = findCol(['title', '標題', '名稱', 'name'], 0);
+        const textIdx = findCol(['text', 'desc', 'description', '內文', '說明', '簡介'], 1);
+        const imageIdx = findCol(['image', 'img', 'photo', 'picture', '圖片', '照片'], 2);
+        const urlIdx = findCol(['url', 'link', 'href', '連結', '網址', '商品連結'], 3);
+
+        const records = [];
+        for (let r = 1; r < matrix.length; r++) {
+          const cols = matrix[r];
+          // 忽略完全空白的列
+          if (!cols || cols.every((cell) => !cell || !cell.trim())) continue;
+
+          const title = cols[titleIdx] || '';
+          const text = cols[textIdx] || '';
+          const image = cols[imageIdx] || '';
+          const url = cols[urlIdx] || '';
+
+          // 至少要有標題或圖片或連結才視為有效資料列
+          if (!title && !text && !image && !url) continue;
+
+          records.push({ title, text, image, url });
+        }
+
+        return records;
+      }
+
+      // =========================================================================
+      //  連結安全正規化（支援外部網址、無協定網址、空值處理）
+      // =========================================================================
+      function normalizeUrl(rawUrl) {
+        if (!rawUrl) return '';
+        const trimmed = rawUrl.trim();
+        if (!trimmed || trimmed === '#') return '';
+        if (/^https?:\/\//i.test(trimmed)) return trimmed;
+        if (/^\/\//.test(trimmed)) return 'https:' + trimmed;
+        // 若使用者直接填寫 shopee.tw/... 沒寫 https://，自動補上
+        if (/^[a-z0-9.-]+\.[a-z]{2,}/i.test(trimmed)) return 'https://' + trimmed;
+        return '';
+      }
+
+      function applyLinkAttributes(anchorEl, rawUrl, fallbackTitle, newTitle) {
+        if (newTitle && newTitle.trim()) {
+          anchorEl.textContent = newTitle.trim();
+        } else if (fallbackTitle) {
+          anchorEl.textContent = fallbackTitle;
+        }
+
+        const safeUrl = normalizeUrl(rawUrl);
+        if (safeUrl) {
+          anchorEl.href = safeUrl;
+          anchorEl.target = '_blank';
+          anchorEl.rel = 'noopener noreferrer';
+          anchorEl.classList.remove('is-disabled');
+          anchorEl.onclick = null;
+        } else {
+          anchorEl.href = '#';
+          anchorEl.removeAttribute('target');
+          anchorEl.classList.add('is-disabled');
+          anchorEl.onclick = function (e) {
+            e.preventDefault();
+          };
+        }
+      }
+
+      // =========================================================================
+      //  圖片路徑解析（支援完整網址、Google Drive 圖片連結、無副檔名本地路徑）
+      // =========================================================================
+      function buildImageCandidates(rawImage) {
+        if (!rawImage) return [];
+        const src = rawImage.trim();
+        if (!src) return [];
+
+        // 轉換 Google Drive 分享連結為直連圖片網址
+        const driveMatch = src.match(/drive\.google\.com\/file\/d\/([^/]+)/i);
+        if (driveMatch && driveMatch[1]) {
+          return ['https://drive.google.com/uc?export=view&id=' + driveMatch[1]];
+        }
+
+        // 若為完整網址、data URI，或已包含常見圖片副檔名，直接使用
+        const hasExt = /\.(jpe?g|png|webp|gif|svg|avif)(\?.*)?$/i.test(src);
+        if (/^(https?:|data:|blob:)/i.test(src) || hasExt) {
+          return [src];
+        }
+
+        // 若為像 images/product1 這樣沒有副檔名的路徑，依序嘗試預設副檔名
+        return CONFIG.defaultImageExts.map((ext) => src + ext);
+      }
+
+      function createFallbackElement(title) {
+        const box = document.createElement('div');
+        box.className = 'product-card__fallback';
+        box.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>' +
+          '<circle cx="8.5" cy="8.5" r="1.5"></circle>' +
+          '<polyline points="21 15 16 10 5 21"></polyline>' +
+          '</svg>';
+
+        const label = document.createElement('span');
+        label.className = 'product-card__fallback-text';
+        label.textContent = title || '精選商品';
+        box.appendChild(label);
+        return box;
+      }
+
+      // =========================================================================
+      //  建立單一商品卡片 DOM
+      // =========================================================================
+      function createProductCard(item) {
+        const card = document.createElement('a');
+        card.className = 'card-link product-card';
+
+        const safeUrl = normalizeUrl(item.url);
+        if (safeUrl) {
+          card.href = safeUrl;
+          card.target = '_blank';
+          card.rel = 'noopener noreferrer';
+        } else {
+          card.href = '#';
+          card.classList.add('is-disabled');
+          card.addEventListener('click', function (e) {
+            e.preventDefault();
+          });
+        }
+
+        // 圖片區塊
+        const media = document.createElement('div');
+        media.className = 'product-card__media';
+
+        const candidates = buildImageCandidates(item.image);
+        if (candidates.length > 0) {
+          const img = document.createElement('img');
+          img.className = 'product-card__img';
+          img.alt = item.title || '精選商品圖片';
+          img.loading = 'lazy';
+          img.referrerPolicy = 'no-referrer';
+
+          let attempt = 0;
+          img.src = candidates[attempt];
+
+          img.addEventListener('error', function () {
+            attempt++;
+            if (attempt < candidates.length) {
+              img.src = candidates[attempt];
+            } else {
+              img.remove();
+              media.insertBefore(createFallbackElement(item.title), media.firstChild);
+            }
+          });
+
+          media.appendChild(img);
+        } else {
+          media.appendChild(createFallbackElement(item.title));
+        }
+
+        // 右下角「馬上去下單」白底橘框標籤
+        const cta = document.createElement('span');
+        cta.className = 'product-card__cta';
+        cta.textContent = CONFIG.productCtaText;
+        media.appendChild(cta);
+
+        card.appendChild(media);
+
+        // 文字區塊
+        const body = document.createElement('div');
+        body.className = 'product-card__body';
+
+        const titleEl = document.createElement('h2');
+        titleEl.className = 'product-card__title';
+        titleEl.textContent = item.title || '精選推薦好物';
+        body.appendChild(titleEl);
+
+        if (item.text) {
+          const descEl = document.createElement('p');
+          descEl.className = 'product-card__desc';
+          descEl.textContent = item.text;
+          body.appendChild(descEl);
+        }
+
+        card.appendChild(body);
+        return card;
+      }
+
+      // =========================================================================
+      //  渲染整頁資料（頭筆 -> 神秘好物、尾筆 -> 蝦皮逛逛、中間 -> 浮動商品卡）
+      // =========================================================================
+      function renderRows(rows) {
+        productsListEl.innerHTML = '';
+
+        if (!rows || rows.length === 0) {
+          return;
+        }
+
+        // 第一筆固定對應頂部「今日精選神秘好物！點開就知道」
+        const firstRow = rows[0];
+        applyLinkAttributes(
+          mysteryCardEl,
+          firstRow.url,
+          '今日精選神秘好物！點開就知道',
+          firstRow.title
+        );
+
+        // 若有 2 筆以上，最後一筆固定對應底部「我要去蝦皮逛逛」
+        if (rows.length >= 2) {
+          const lastRow = rows[rows.length - 1];
+          applyLinkAttributes(
+            shopeeCardEl,
+            lastRow.url,
+            '我要去蝦皮逛逛',
+            lastRow.title
+          );
+        }
+
+        // 中間所有資料（第 2 筆 ~ 倒數第 2 筆）浮動渲染為商品卡片
+        const productRows = rows.length > 2 ? rows.slice(1, -1) : [];
+        const fragment = document.createDocumentFragment();
+        for (const item of productRows) {
+          fragment.appendChild(createProductCard(item));
+        }
+        productsListEl.appendChild(fragment);
+      }
+
+      // =========================================================================
+      //  載入中骨架屏
+      // =========================================================================
+      function showLoadingSkeleton(count) {
+        productsListEl.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+          const sk = document.createElement('div');
+          sk.className = 'skeleton-card';
+          sk.setAttribute('aria-hidden', 'true');
+          sk.innerHTML =
+            '<div class="skeleton-box skeleton-media"></div>' +
+            '<div class="skeleton-box skeleton-title"></div>' +
+            '<div class="skeleton-box skeleton-line"></div>' +
+            '<div class="skeleton-box skeleton-line skeleton-line--short"></div>';
+          productsListEl.appendChild(sk);
+        }
+      }
+
+      // =========================================================================
+      //  主流程：讀取試算表 CSV 並渲染
+      // =========================================================================
+      async function init() {
+        // 允許透過 ?csv=... 網址參數動態測試任何公開的 Google 試算表 CSV
+        const params = new URLSearchParams(window.location.search);
+        const activeCsvUrl = (params.get('csv') || CONFIG.csvUrl || '').trim();
+
+        if (!activeCsvUrl) {
+          if (CONFIG.useFallbackDemoData) {
+            renderRows(DEMO_ROWS);
+          }
+          return;
+        }
+
+        showLoadingSkeleton(2);
+
+        try {
+          // 加上時間戳參數避免瀏覽器快取舊版試算表內容
+          const separator = activeCsvUrl.includes('?') ? '&' : '?';
+          const fetchUrl = activeCsvUrl + separator + '_t=' + Date.now();
+
+          const response = await fetch(fetchUrl, { cache: 'no-store' });
+          if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+          }
+
+          const csvText = await response.text();
+          const rows = parseCSV(csvText);
+
+          if (rows.length > 0) {
+            renderRows(rows);
+          } else if (CONFIG.useFallbackDemoData) {
+            renderRows(DEMO_ROWS);
+          } else {
+            productsListEl.innerHTML =
+              '<div class="status-notice">試算表目前尚無商品資料。</div>';
+          }
+        } catch (err) {
+          console.error('載入 CSV 失敗：', err);
+          if (CONFIG.useFallbackDemoData) {
+            renderRows(DEMO_ROWS);
+          } else {
+            productsListEl.innerHTML =
+              '<div class="status-notice">目前無法讀取商品資料，請稍後重新整理頁面。</div>';
+          }
+        }
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
